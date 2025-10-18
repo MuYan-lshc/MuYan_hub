@@ -1,0 +1,76 @@
+# 📛 工作流名称，会显示在 GitHub Actions 页面上
+name: Build and Deploy VitePress
+
+# 🚀 工作流触发条件：当推送到 main 分支、创建 PR，或手动触发时执行
+on:
+  push:
+    branches: [main]           # 推送到 main 分支时触发
+  pull_request:
+    branches: [main]           # PR 合并到 main 分支时触发
+  workflow_dispatch:           # 允许手动触发工作流
+
+# 🌏 设置环境变量：时区为中国标准时间
+env:
+  TZ: Asia/Shanghai
+
+# 🔐 权限设置：允许访问 GitHub Pages 和身份令牌
+permissions:
+  contents: read               # 读取仓库内容
+  pages: write                 # 写入 GitHub Pages
+  id-token: write              # 用于身份验证令牌（OIDC）
+
+# 🚦 并发控制：防止多个部署同时进行
+concurrency:
+  group: pages                 # 同一组命名，避免重复部署
+  cancel-in-progress: false   # 不取消正在进行的部署
+
+# 🧱 定义两个任务：build 和 deploy
+jobs:
+  # 🏗️ 构建任务
+  build:
+    runs-on: ubuntu-latest     # 使用最新的 Ubuntu 环境
+
+    strategy:
+      matrix:
+        node-version: [20]     # 使用 Node.js 20 版本
+
+    steps:
+      # 📥 第一步：拉取仓库代码
+      - name: Checkout source code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0       # 保留完整 Git 历史记录（用于部署）
+
+      # 🧰 第二步：安装 Node.js
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      # 📦 第三步：安装依赖（使用 npm）
+      - name: Install dependencies
+        run: npm install
+
+      # 🏗️ 第四步：构建 VitePress 项目
+      - name: Build VitePress site
+        run: npm run docs:build
+
+      # 📤 第五步：上传构建产物供部署使用
+      - name: Upload build artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/.vitepress/dist  # VitePress 默认输出目录
+
+  # 🚚 部署任务
+  deploy:
+    environment:
+      name: github-pages       # GitHub Pages 环境
+      url: ${{ steps.deployment.outputs.page_url }}  # 自动生成部署后的页面地址
+    runs-on: ubuntu-latest
+    needs: build               # 等待 build 任务完成后执行
+
+    steps:
+      # 🚀 最后一步：部署到 GitHub Pages
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
