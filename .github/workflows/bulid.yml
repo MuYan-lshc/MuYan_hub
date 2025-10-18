@@ -51,9 +51,12 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Fix vitepress permission
+        run: chmod +x node_modules/.bin/vitepress
       # 🏗️ 第四步：构建 VitePress 项目（使用 npx 确保权限和路径正确）
       - name: Build VitePress site
-        run: npx vitepress build docs
+        run: npm run docs:build
+
 
       # 📤 第五步：上传构建产物供部署使用
       - name: Upload build artifact
