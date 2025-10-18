@@ -47,13 +47,13 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
 
-      # 📦 第三步：安装依赖（使用 npm）
+      # 📦 第三步：安装项目依赖（使用 npm）
       - name: Install dependencies
         run: npm install
 
-      # 🏗️ 第四步：构建 VitePress 项目
+      # 🏗️ 第四步：构建 VitePress 项目（使用 npx 确保权限和路径正确）
       - name: Build VitePress site
-        run: npm run docs:build
+        run: npx vitepress build docs
 
       # 📤 第五步：上传构建产物供部署使用
       - name: Upload build artifact
